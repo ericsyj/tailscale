@@ -90,7 +90,7 @@ type Impl struct {
 	inFlightByClient         map[netip.Addr]int
 }
 
-func Create(logf logger.Logf, tundev *tstun.Wrapper, dnsManager *dns.Manager, proxyMapper *proxymap.Mapper, memoryPressure func() tun.MemoryPressure) (*Impl, error) {
+func Create(logf logger.Logf, tundev *tstun.Wrapper, dnsManager *dns.Manager, proxyMapper *proxymap.Mapper, memoryPressure func() tun.MemoryPressure, tcpCongestionControl string) (*Impl, error) {
 	if logf == nil || tundev == nil || dnsManager == nil || proxyMapper == nil {
 		return nil, E.New("netstack: missing subsystem")
 	}
@@ -113,9 +113,10 @@ func Create(logf logger.Logf, tundev *tstun.Wrapper, dnsManager *dns.Manager, pr
 	ns.ipstack, err = tun.NewGo(tun.StackOptions{
 		Context: ns.ctx, Tun: ns.device, TunOptions: tun.Options{MTU: uint32(mtu)},
 		Handler: ns, Logger: stackLogger{logf}, UDPTimeout: 2 * time.Minute, ICMPTimeout: time.Minute,
-		UDPMapping:     tun.NATMappingAddressAndPortDependent,
-		UDPFiltering:   tun.NATFilteringAddressAndPortDependent,
-		MemoryPressure: memoryPressure,
+		UDPMapping:           tun.NATMappingAddressAndPortDependent,
+		UDPFiltering:         tun.NATFilteringAddressAndPortDependent,
+		MemoryPressure:       memoryPressure,
+		TCPCongestionControl: tcpCongestionControl,
 	})
 	if err != nil {
 		ns.ctxCancel()

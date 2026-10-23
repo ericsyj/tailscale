@@ -313,9 +313,10 @@ type Server struct {
 	// Tun, if non-nil, specifies a custom tun.Device to use for packet I/O.
 	//
 	// This field must be set before calling Start.
-	Tun                    tun.Device
-	NetstackHandler        singtun.Handler
-	NetstackMemoryPressure func() singtun.MemoryPressure
+	Tun                          tun.Device
+	NetstackHandler              singtun.Handler
+	NetstackMemoryPressure       func() singtun.MemoryPressure
+	NetstackTCPCongestionControl string
 
 	// Router, if non-nil, is used to configure the OS network stack for the
 	// custom Tun device. If nil while Tun is set, a system router is created.
@@ -898,7 +899,7 @@ func (s *Server) start() (reterr error) {
 	sys.HealthTracker.Get().SetMetricsRegistry(sys.UserMetricsRegistry())
 
 	// TODO(oxtoacart): do we need to support Taildrive on tsnet, and if so, how?
-	ns, err := netstack.Create(tsLogf, sys.Tun.Get(), sys.DNSManager.Get(), sys.ProxyMapper(), s.NetstackMemoryPressure)
+	ns, err := netstack.Create(tsLogf, sys.Tun.Get(), sys.DNSManager.Get(), sys.ProxyMapper(), s.NetstackMemoryPressure, s.NetstackTCPCongestionControl)
 	if err != nil {
 		return fmt.Errorf("netstack.Create: %w", err)
 	}
