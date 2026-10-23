@@ -27,6 +27,11 @@ type Hooks struct {
 	// DefaultRoute, if non-nil, replaces the platform default route
 	// lookup for this monitor's interface state.
 	DefaultRoute func() (DefaultRouteDetails, error)
+
+	// DisableUDPGSO prohibits UDP send segmentation on the UDP sockets of
+	// magicsock and the peer relay server. It adds to, and cannot override,
+	// TS_DEBUG_DISABLE_UDP_GSO and the control-plane node attribute.
+	DisableUDPGSO bool
 }
 
 func (m *Monitor) Hooks() Hooks {
@@ -43,4 +48,8 @@ func (m *Monitor) ControlFunc() func(network, address string, conn syscall.RawCo
 
 func (m *Monitor) ListenPacketFunc() func(ctx context.Context, network, address string) (nettype.PacketConn, error) {
 	return m.hooks.ListenPacket
+}
+
+func (m *Monitor) DisableUDPGSO() bool {
+	return m.hooks.DisableUDPGSO
 }

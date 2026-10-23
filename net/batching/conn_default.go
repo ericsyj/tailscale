@@ -11,7 +11,7 @@ import (
 )
 
 // TryUpgradeToConn is no-op on all platforms except linux.
-func TryUpgradeToConn(pconn nettype.PacketConn, _ string, _ int, _ string, _ *controlknobs.Knobs) nettype.PacketConn {
+func TryUpgradeToConn(pconn nettype.PacketConn, _ string, _ int, _ string, _ *controlknobs.Knobs, _ bool) nettype.PacketConn {
 	return pconn
 }
 

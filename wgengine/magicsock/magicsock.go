@@ -3765,13 +3765,13 @@ func (c *Conn) bindSocket(ruc *RebindingUDPConn, network string, curPortFate cur
 	defer ruc.mu.Unlock()
 
 	if runtime.GOOS == "js" {
-		ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs)
+		ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs, false)
 		return nil
 	}
 
 	if debugAlwaysDERP() {
 		c.logf("disabled %v per TS_DEBUG_ALWAYS_USE_DERP", network)
-		ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs)
+		ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs, false)
 		return nil
 	}
 
@@ -3830,7 +3830,7 @@ func (c *Conn) bindSocket(ruc *RebindingUDPConn, network string, curPortFate cur
 		if debugBindSocket() {
 			c.logf("magicsock: bindSocket: successfully listened %v port %d", network, port)
 		}
-		ruc.setConnLocked(pconn, network, c.bind.BatchSize(), c.controlKnobs)
+		ruc.setConnLocked(pconn, network, c.bind.BatchSize(), c.controlKnobs, c.netMon.DisableUDPGSO())
 		if network == "udp4" {
 			c.health.SetUDP4Unbound(false)
 		}
@@ -3841,7 +3841,7 @@ func (c *Conn) bindSocket(ruc *RebindingUDPConn, network string, curPortFate cur
 	// Set pconn to a dummy conn whose reads block until closed.
 	// This keeps the receive funcs alive for a future in which
 	// we get a link change and we can try binding again.
-	ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs)
+	ruc.setConnLocked(newBlockForeverConn(), "", c.bind.BatchSize(), c.controlKnobs, false)
 	if network == "udp4" {
 		c.health.SetUDP4Unbound(true)
 	}

@@ -508,9 +508,9 @@ func tryEnableRXQOverflowsCounter(pconn nettype.PacketConn) (enabled bool) {
 // tryEnableUDPOffload attempts to enable the UDP_GRO socket option on pconn,
 // and returns two booleans indicating TX and RX UDP offload support. If knobs
 // is non-nil, UDP GSO and/or UDP GRO may be disabled via control-plane node
-// attributes.
-func tryEnableUDPOffload(pconn nettype.PacketConn, knobs *controlknobs.Knobs) (hasTX bool, hasRX bool) {
-	disableGSO := envknob.Bool("TS_DEBUG_DISABLE_UDP_GSO") ||
+// attributes. disableGSO prohibits UDP GSO regardless of knobs.
+func tryEnableUDPOffload(pconn nettype.PacketConn, knobs *controlknobs.Knobs, disableGSO bool) (hasTX bool, hasRX bool) {
+	disableGSO = disableGSO || envknob.Bool("TS_DEBUG_DISABLE_UDP_GSO") ||
 		(knobs != nil && knobs.DisableUDPGSO.Load())
 	disableGRO := envknob.Bool("TS_DEBUG_DISABLE_UDP_GRO") ||
 		(knobs != nil && knobs.DisableUDPGRO.Load())
@@ -606,7 +606,8 @@ func getRXQOverflowsMetric(name string) *clientmetric.Metric {
 // nonzero, then read ops will propagate the SO_RXQ_OVFL control message counter
 // to a clientmetric with the supplied name. If knobs is non-nil, UDP GSO
 // and/or UDP GRO may be disabled via control-plane node attributes.
-func TryUpgradeToConn(pconn nettype.PacketConn, network string, batchSize int, rxqOverflowsMetricName string, knobs *controlknobs.Knobs) nettype.PacketConn {
+// disableGSO prohibits UDP GSO while keeping batch I/O and UDP GRO.
+func TryUpgradeToConn(pconn nettype.PacketConn, network string, batchSize int, rxqOverflowsMetricName string, knobs *controlknobs.Knobs, disableGSO bool) nettype.PacketConn {
 	if runtime.GOOS != "linux" {
 		// Exclude Android.
 		return pconn
@@ -657,7 +658,7 @@ func TryUpgradeToConn(pconn nettype.PacketConn, network string, batchSize int, r
 		panic("bogus network")
 	}
 	var txOffload bool
-	txOffload, b.rxOffload = tryEnableUDPOffload(uc, knobs)
+	txOffload, b.rxOffload = tryEnableUDPOffload(uc, knobs, disableGSO)
 	b.txOffload.Store(txOffload)
 	if knobs != nil {
 		b.neverGSOEqualTail = &knobs.NeverGSOEqualTail

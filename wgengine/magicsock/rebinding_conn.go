@@ -42,9 +42,9 @@ type RebindingUDPConn struct {
 // nettype.PacketConn to a batchingConn when appropriate. This upgrade is
 // intentionally pushed closest to where read/write ops occur in order to avoid
 // disrupting surrounding code that assumes nettype.PacketConn is a
-// *net.UDPConn. knobs may be nil.
-func (c *RebindingUDPConn) setConnLocked(p nettype.PacketConn, network string, batchSize int, knobs *controlknobs.Knobs) {
-	upc := batching.TryUpgradeToConn(p, network, batchSize, "magicsock_udp_rxq_overflows", knobs)
+// *net.UDPConn. knobs may be nil. disableGSO prohibits UDP GSO on the upgrade.
+func (c *RebindingUDPConn) setConnLocked(p nettype.PacketConn, network string, batchSize int, knobs *controlknobs.Knobs, disableGSO bool) {
+	upc := batching.TryUpgradeToConn(p, network, batchSize, "magicsock_udp_rxq_overflows", knobs, disableGSO)
 	c.pconn = upc
 	c.pconnAtomic.Store(&upc)
 	c.port = uint16(c.localAddrLocked().Port)

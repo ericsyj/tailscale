@@ -695,7 +695,7 @@ func (s *Server) bindSockets(desiredPort uint16) error {
 					break SocketsLoop
 				}
 			}
-			pc := batching.TryUpgradeToConn(uc, network, batching.IdealBatchSize, "udprelay_rxq_overflows", s.controlKnobs)
+			pc := batching.TryUpgradeToConn(uc, network, batching.IdealBatchSize, "udprelay_rxq_overflows", s.controlKnobs, s.netMon.DisableUDPGSO())
 			bc, ok := pc.(batching.Conn)
 			if !ok {
 				bc = &singlePacketConn{uc}
